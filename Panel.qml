@@ -1,5 +1,5 @@
+pragma ComponentBehavior: Bound
 import QtQuick
-import Quickshell
 import qs.Ui as Ui
 import qs.Commons
 
@@ -10,9 +10,16 @@ Ui.Panel {
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
   property int cursor: 0
-  readonly property var s: modem.state
-  readonly property color ink: bar ? bar.foreground : Color.foreground
-  readonly property string family: bar ? bar.fontFamily : Style.font.family
+  readonly property var s: modem.modemState
+  readonly property color ink: root.barForeground
+  // Omarchy exposes host and font tokens as QObject; their members are runtime properties.
+  // qmllint disable missing-property
+  readonly property string family: root.bar ? root.bar.fontFamily : Style.font.family
+  readonly property int bodySize: Style.font.body
+  readonly property int captionSize: Style.font.caption
+  readonly property int titleSize: Style.font.title
+  readonly property int smallSize: Style.font.bodySmall
+  // qmllint enable missing-property
   function power() { modem.act(s.radio ? "power-off" : "power-on") }
   function connection() {
     if (s.connected) modem.act("disconnect")
@@ -95,24 +102,24 @@ Ui.Panel {
           textFormat: Text.PlainText
           wrapMode: Text.WordWrap
           color: root.ink; opacity: 0.7
-          font.family: root.family; font.pixelSize: Style.font.body
+          font.family: root.family; font.pixelSize: root.bodySize
         }
         Ui.PanelSeparator { foreground: root.ink }
         Row {
           width: parent.width; spacing: Style.space(16)
           Column {
             width: (parent.width - parent.spacing) / 2; spacing: Style.space(4)
-            Text { text: "SIGNAL"; color: root.ink; opacity: 0.55; font.family: root.family; font.pixelSize: Style.font.caption; font.letterSpacing: 1 }
+            Text { text: "SIGNAL"; color: root.ink; opacity: 0.55; font.family: root.family; font.pixelSize: root.captionSize; font.letterSpacing: 1 }
             Text {
               text: root.s.radio && root.s.present ? ((root.s.signalRecent ? root.s.signal + "%" : "—") + "  " + (root.s.technology || "")) : "—"
-              color: root.ink; font.family: root.family; font.pixelSize: Style.font.title; font.bold: true
+              color: root.ink; font.family: root.family; font.pixelSize: root.titleSize; font.bold: true
             }
           }
           Column {
             width: (parent.width - parent.spacing) / 2; spacing: Style.space(4)
-            Text { text: "TRAFFIC NOW"; color: root.ink; opacity: 0.55; font.family: root.family; font.pixelSize: Style.font.caption; font.letterSpacing: 1 }
-            Text { text: "↓ " + modem.bytes(modem.rxRate) + "/s"; color: root.ink; font.family: root.family; font.pixelSize: Style.font.body }
-            Text { text: "↑ " + modem.bytes(modem.txRate) + "/s"; color: root.ink; opacity: 0.65; font.family: root.family; font.pixelSize: Style.font.body }
+            Text { text: "TRAFFIC NOW"; color: root.ink; opacity: 0.55; font.family: root.family; font.pixelSize: root.captionSize; font.letterSpacing: 1 }
+            Text { text: "↓ " + modem.bytes(modem.rxRate) + "/s"; color: root.ink; font.family: root.family; font.pixelSize: root.bodySize }
+            Text { text: "↑ " + modem.bytes(modem.txRate) + "/s"; color: root.ink; opacity: 0.65; font.family: root.family; font.pixelSize: root.bodySize }
           }
         }
         Rectangle {
@@ -165,10 +172,11 @@ Ui.Panel {
             {label: "Modem", value: root.s.model || "—"}
           ]
           Row {
+            id: detailRow
             required property var modelData
             width: content.width
-            Text { width: parent.width * 0.35; text: modelData.label; textFormat: Text.PlainText; color: root.ink; opacity: 0.55; font.family: root.family; font.pixelSize: Style.font.bodySmall }
-            Text { width: parent.width * 0.65; text: modelData.value; textFormat: Text.PlainText; color: root.ink; font.family: root.family; font.pixelSize: Style.font.bodySmall; horizontalAlignment: Text.AlignRight; elide: Text.ElideRight }
+            Text { width: parent.width * 0.35; text: detailRow.modelData.label; textFormat: Text.PlainText; color: root.ink; opacity: 0.55; font.family: root.family; font.pixelSize: root.smallSize }
+            Text { width: parent.width * 0.65; text: detailRow.modelData.value; textFormat: Text.PlainText; color: root.ink; font.family: root.family; font.pixelSize: root.smallSize; horizontalAlignment: Text.AlignRight; elide: Text.ElideRight }
           }
         }
         Row {
@@ -196,7 +204,7 @@ Ui.Panel {
           text: modem.message || root.s.error || ""
           textFormat: Text.PlainText; wrapMode: Text.WrapAnywhere
           color: modem.actionFailed ? Color.urgent : root.ink
-          font.family: root.family; font.pixelSize: Style.font.bodySmall
+          font.family: root.family; font.pixelSize: root.smallSize
         }
         Ui.Button {
           width: parent.width; text: "Refresh status"
@@ -208,7 +216,7 @@ Ui.Panel {
           width: parent.width
           text: "P power · C connect · T test · R refresh · Esc close"
           textFormat: Text.PlainText; wrapMode: Text.WordWrap
-          color: root.ink; opacity: 0.45; font.family: root.family; font.pixelSize: Style.font.caption
+          color: root.ink; opacity: 0.45; font.family: root.family; font.pixelSize: root.captionSize
         }
       }
     }

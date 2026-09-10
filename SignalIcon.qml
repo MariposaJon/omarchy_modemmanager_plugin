@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 
@@ -15,13 +16,14 @@ Item {
     Repeater {
       model: 4
       Rectangle {
+        id: signalBar
         required property int index
         width: root.width * 0.19
-        height: root.height * (0.25 + index * 0.22)
+        height: root.height * (0.25 + signalBar.index * 0.22)
         anchors.bottom: parent.bottom
         radius: Math.max(1, width * 0.15)
         color: root.connected ? Color.accent : root.foreground
-        opacity: root.powered && index < Math.max(1, Math.ceil(root.quality / 25)) ? 1 : 0.2
+        opacity: root.powered && signalBar.index < Math.max(1, Math.ceil(root.quality / 25)) ? 1 : 0.2
       }
     }
   }

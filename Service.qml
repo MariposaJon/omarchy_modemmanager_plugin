@@ -5,7 +5,7 @@ Item {
   id: root
   property bool panelOpen: false
   property int intervalSec: 10
-  property var state: ({present: false, radio: false, connected: false, status: "Checking modem…", profiles: []})
+  property var modemState: ({present: false, radio: false, connected: false, status: "Checking modem…", profiles: []})
   property string selectedProfile: ""
   property string message: ""
   property bool actionFailed: false
@@ -16,7 +16,7 @@ Item {
   property var previous: null
   readonly property string helper: decodeURIComponent(Qt.resolvedUrl("modem.py").toString().replace(/^file:\/\//, ""))
   readonly property var profile: {
-    var profiles = state.profiles || []
+    var profiles = root.modemState.profiles || []
     for (var i = 0; i < profiles.length; i++)
       if (profiles[i].uuid === selectedProfile) return profiles[i]
     return profiles.length ? profiles[0] : ({uuid: "", name: "No saved profile", autoconnect: false})
@@ -43,7 +43,7 @@ Item {
     try {
       var next = JSON.parse(raw)
       if (!next.ok) {
-        state = {present: false, radio: false, connected: false, status: next.status || "Status unavailable", profiles: [], error: next.error}
+        modemState = {present: false, radio: false, connected: false, status: next.status || "Status unavailable", profiles: [], error: next.error}
         previous = null; rxRate = 0; txRate = 0
         return
       }
@@ -53,11 +53,11 @@ Item {
         txRate = Math.max(0, next.tx - previous.tx) / elapsed
       } else { rxRate = 0; txRate = 0 }
       previous = next
-      state = next
+      modemState = next
       var exists = (next.profiles || []).some(function(p) { return p.uuid === selectedProfile })
       if (!exists) selectedProfile = next.profile || ""
     } catch (e) {
-      state = {present: false, radio: false, connected: false, status: "Status unavailable", profiles: [], error: "Could not read modem status"}
+      modemState = {present: false, radio: false, connected: false, status: "Status unavailable", profiles: [], error: "Could not read modem status"}
     }
   }
   onPanelOpenChanged: refresh()
@@ -71,7 +71,9 @@ Item {
     command: ["python3", root.helper, "status"]
     stdout: StdioCollector { id: statusOut; waitForEnd: true }
     stderr: StdioCollector { id: statusErr; waitForEnd: true }
-    onExited: function(code) {
+    // Quickshell metadata omits QProcess::ExitStatus; this handler uses neither parameter.
+    // qmllint disable signal-handler-parameters
+    onExited: function() {
       if (statusOut.text.trim()) root.ingest(statusOut.text)
       else root.ingest(JSON.stringify({ok: false, error: statusErr.text || "Backend did not respond"}))
       if (root.pendingAction !== "") {
@@ -80,12 +82,15 @@ Item {
         Qt.callLater(function() { root.act(nextAction) })
       }
     }
+    // qmllint enable signal-handler-parameters
   }
   Process {
     id: actionProcess
     stdout: StdioCollector { id: actionOut; waitForEnd: true }
     stderr: StdioCollector { id: actionErr; waitForEnd: true }
-    onExited: function(code) {
+    // Quickshell metadata omits QProcess::ExitStatus; this handler uses neither parameter.
+    // qmllint disable signal-handler-parameters
+    onExited: function() {
       try {
         var result = JSON.parse(actionOut.text)
         root.actionFailed = !result.ok
@@ -93,6 +98,7 @@ Item {
       } catch (e) { root.actionFailed = true; root.message = actionErr.text || "Action failed" }
       delayedRefresh.restart()
     }
+    // qmllint enable signal-handler-parameters
   }
   Timer { id: delayedRefresh; interval: 500; onTriggered: root.refresh() }
   Timer {

@@ -16,31 +16,43 @@ Requires Omarchy's Quickshell shell, `python`, `python-dbus`, `modemmanager`, `n
 
 Status refreshes every 10 seconds in the background and 3 seconds with the panel open. The background interval can be changed in the widget settings. The panel does not guess SIM PINs or reset modem hardware. On multi-modem systems it selects the most active modem; explicit device selection is not implemented.
 
-## Install / update
+## Install
 
 With the dependencies above installed and ModemManager and NetworkManager running:
 
 ```bash
-git clone https://github.com/MariposaJon/omarchy_modemmanager_plugin.git
-cd omarchy_modemmanager_plugin
-mkdir -p ~/.config/omarchy/plugins/jon.modem
-cp manifest.json Panel.qml Service.qml SignalIcon.qml modem.py README.md LICENSE ~/.config/omarchy/plugins/jon.modem/
-omarchy plugin validate ~/.config/omarchy/plugins/jon.modem
-omarchy-shell shell rescanPlugins
-omarchy plugin enable jon.modem --section right --before omarchy.network
+omarchy plugin add https://github.com/MariposaJon/omarchy_modemmanager_plugin.git --enable
 ```
 
-For updates, run `git pull --ff-only` from your checkout, then repeat the copy,
-validation, and rescan commands. Open the panel with `omarchy-shell jon.modem open`.
+The widget defaults to the right side of the bar. To place it before the
+network widget:
+
+```bash
+omarchy bar move jon.modem --section right --before omarchy.network
+```
+
 Create your cellular connection profile in NetworkManager first; this panel
-selects existing compatible GSM profiles.
+selects existing compatible GSM profiles. Open and close it through the shell:
+
+```bash
+omarchy-shell shell summon jon.modem '{}'
+omarchy-shell shell hide jon.modem
+```
+
+If you already have a manually copied `jon.modem`, back up any local edits and
+run `omarchy plugin remove jon.modem` before installing the repository version.
+Omarchy backs up non-git plugin folders during removal.
+
+## Update
+
+```bash
+omarchy plugin update jon.modem
+```
 
 ## Remove
 
 ```bash
-omarchy plugin disable jon.modem
-rm -r ~/.config/omarchy/plugins/jon.modem
-omarchy-shell shell rescanPlugins
+omarchy plugin remove jon.modem
 ```
 
 This removes the panel; saved NetworkManager connections remain available.
@@ -64,9 +76,7 @@ selected profile has autoconnect enabled. It preserves that preference.
 From the repository root:
 
 ```bash
-python -m unittest discover -s . -p test_modem.py -v
-python -m unittest discover -s recovery -v
-omarchy plugin validate .
+bash scripts/validate.sh
 ```
 
 The six panel backend tests cover profile selection, SIM matching, power
@@ -83,3 +93,13 @@ with no usable modem.
 An optional, hardware-specific recovery workaround is in [recovery/](recovery/README.md).
 It requires administrator installation and is not installed by the panel setup.
 It targets Intel 8086:7360 at PCI address `0000:02:00.0` only.
+
+The validation script runs Omarchy's manifest validator, QML lint, shell syntax
+checks, and the backend tests. It needs `qt6-declarative` for `qmllint` and an
+installed Omarchy shell. It creates a temporary import alias for Quickshell's
+`qs` namespace; no symlinks are added to the plugin directory. Narrow inline
+lint annotations cover Omarchy's dynamic font/host properties and Quickshell's
+missing `QProcess::ExitStatus` metadata. All other lint warnings remain enabled.
+
+See [VALIDATION.md](VALIDATION.md) for the release checks and remaining hardware
+coverage limits.
