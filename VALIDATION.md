@@ -1,6 +1,6 @@
 # Release validation
 
-Version 1.0.1 follows the [Omarchy authoring guide](https://plugins.omarchy.org/develop.html)
+Version 1.0.2 follows the [Omarchy authoring guide](https://plugins.omarchy.org/develop.html)
 and [publishing requirements](https://plugins.omarchy.org/publish.html).
 
 ## Repository and runtime contract

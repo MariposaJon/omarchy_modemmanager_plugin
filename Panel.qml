@@ -6,7 +6,8 @@ import qs.Commons
 Ui.Panel {
   id: root
   moduleName: "jon.modem"
-  ipcTarget: "jon.modem"
+  // The shell routes panel commands to each bar instance; avoid duplicate IPC targets.
+  manageIpc: false
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
   property int cursor: 0
