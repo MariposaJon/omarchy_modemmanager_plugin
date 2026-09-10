@@ -28,6 +28,20 @@ that Quickshell resolves at runtime. Source annotations suppress only known
 external metadata gaps at the affected property declarations and handlers:
 Omarchy's dynamic host/font members and Quickshell's missing exit-status type.
 
+## Installed lifecycle checks (2026-09-10)
+
+The manually installed panel was backed up through `omarchy plugin remove`,
+then installed from this public repository with `omarchy plugin add --enable`.
+Disable/re-enable and `omarchy plugin update` passed. After a shell restart,
+the shell reported the widget mounted and visible in the right bar section.
+Repeated shell summon/hide calls succeeded and Escape was exercised while the
+panel was open. No modem-plugin QML errors or duplicate IPC warnings appeared
+in the fresh shell log. The panel uses the shell routing APIs rather than
+registering a separate IPC handler for each bar instance.
+
+Visual checks on additional monitor layouts and physical click/keyboard
+interaction on other machines remain part of broader compatibility testing.
+
 ## Hardware coverage
 
 Verified hardware is Fibocom L850 / Intel XMM7360 with a locally patched
