@@ -1,0 +1,10 @@
+[Unit]
+Description=Recover unavailable Intel XMM7360 modem after resume
+After=ModemManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/xmm7360-recover
+TimeoutStartSec=240
+UMask=0077
+Environment=PATH=/usr/bin:/usr/sbin

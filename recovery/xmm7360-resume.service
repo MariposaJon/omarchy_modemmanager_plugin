@@ -1,0 +1,13 @@
+[Unit]
+Description=Schedule Intel XMM7360 health check after sleep
+Before=sleep.target
+StopWhenUnneeded=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/true
+ExecStop=/usr/bin/systemctl --no-block start xmm7360-recover.service
+
+[Install]
+WantedBy=sleep.target

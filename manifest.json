@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "jon.modem",
+  "name": "Mobile Broadband",
+  "version": "1.0.0",
+  "author": "Jon",
+  "license": "MIT",
+  "description": "Cellular radio, connection controls, signal and traffic monitoring for ModemManager.",
+  "kinds": ["bar-widget"],
+  "entryPoints": {"barWidget": "Panel.qml"},
+  "barWidget": {
+    "displayName": "Mobile Broadband",
+    "description": "Modem power, connection, signal, traffic and diagnostics.",
+    "category": "Network",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {"refreshIntervalSec": 10},
+    "schema": [{"key": "refreshIntervalSec", "type": "integer", "label": "Background refresh (seconds)", "min": 5, "max": 60, "step": 5, "defaultValue": 10}]
+  }
+}
