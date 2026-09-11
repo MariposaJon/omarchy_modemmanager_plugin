@@ -4,7 +4,11 @@ After=ModemManager.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/libexec/xmm7360-recover
+ExecStart=/usr/bin/python3 -I /usr/local/libexec/omarchy-modem-recovery/recover.py
 TimeoutStartSec=240
+TimeoutStopSec=2
+KillMode=control-group
+SendSIGKILL=yes
+NoNewPrivileges=yes
 UMask=0077
 Environment=PATH=/usr/bin:/usr/sbin

@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import Quickshell.Io
 
 Item {
@@ -14,7 +15,13 @@ Item {
   property real rxRate: 0
   property real txRate: 0
   property var previous: null
-  readonly property string helper: decodeURIComponent(Qt.resolvedUrl("modem.py").toString().replace(/^file:\/\//, ""))
+  readonly property var helperEnvironment: ({
+    PATH: "/usr/bin", LC_ALL: "C",
+    XDG_RUNTIME_DIR: Quickshell.env("XDG_RUNTIME_DIR"),
+    DBUS_SESSION_BUS_ADDRESS: Quickshell.env("DBUS_SESSION_BUS_ADDRESS"),
+    WAYLAND_DISPLAY: Quickshell.env("WAYLAND_DISPLAY")
+  })
+  readonly property string helper: decodeURIComponent(Qt.resolvedUrl("launcher.py").toString().replace(/^file:\/\//, ""))
   readonly property var profile: {
     var profiles = root.modemState.profiles || []
     for (var i = 0; i < profiles.length; i++)
@@ -34,9 +41,9 @@ Item {
   function act(name) {
     if (busy) return
     if (statusProcess.running) { pendingAction = name; return }
-    message = name === "test" ? "Testing HTTPS through cellular…" : name === "power-on" ? "Turning on · waiting for network…" : "Applying…"
+    message = name === "test" ? "Testing HTTPS through cellular…" : name === "power-on" ? "Turning on · waiting for network…" : name === "copy" ? "Preparing diagnostics · paste within 60 seconds…" : "Applying…"
     actionFailed = false
-    actionProcess.command = ["python3", helper, name, "--profile", profile.uuid || ""]
+    actionProcess.command = ["/usr/bin/python3", "-I", helper, name, "--profile", profile.uuid || ""]
     actionProcess.running = true
   }
   function ingest(raw) {
@@ -68,7 +75,9 @@ Item {
   }
   Process {
     id: statusProcess
-    command: ["python3", root.helper, "status"]
+    clearEnvironment: true
+    environment: root.helperEnvironment
+    command: ["/usr/bin/python3", "-I", root.helper, "status"]
     stdout: StdioCollector { id: statusOut; waitForEnd: true }
     stderr: StdioCollector { id: statusErr; waitForEnd: true }
     // Quickshell metadata omits QProcess::ExitStatus; this handler uses neither parameter.
@@ -86,6 +95,8 @@ Item {
   }
   Process {
     id: actionProcess
+    clearEnvironment: true
+    environment: root.helperEnvironment
     stdout: StdioCollector { id: actionOut; waitForEnd: true }
     stderr: StdioCollector { id: actionErr; waitForEnd: true }
     // Quickshell metadata omits QProcess::ExitStatus; this handler uses neither parameter.
@@ -102,11 +113,15 @@ Item {
   }
   Timer { id: delayedRefresh; interval: 500; onTriggered: root.refresh() }
   Timer {
-    interval: 180000; running: actionProcess.running
+    interval: 190000; running: actionProcess.running
     onTriggered: { actionProcess.signal(15); root.message = "Action timed out"; root.actionFailed = true }
   }
+  // The systemd cgroup deadline and its 2s SIGKILL escalation expire first.
+  // These secondary watchdogs bound a stuck relay without orphaning its worker.
+  Timer { interval: 195000; running: actionProcess.running; onTriggered: actionProcess.signal(9) }
+  Timer { interval: 35000; running: statusProcess.running; onTriggered: statusProcess.signal(9) }
   Timer {
-    interval: 20000; running: statusProcess.running
+    interval: 30000; running: statusProcess.running
     onTriggered: statusProcess.signal(15)
   }
 }

@@ -3,6 +3,13 @@ from unittest.mock import patch
 import modem
 
 class ModemControls(unittest.TestCase):
+    def test_diagnostics_clipboard_has_bounded_foreground_ownership(self):
+        status = dict(ok=True, present=True, profiles=[])
+        with patch.object(modem, 'snapshot', return_value=status), patch.object(modem, 'run') as run:
+            self.assertIn('pasted', modem.action('copy'))
+            self.assertEqual(run.call_args.args[0], ['wl-copy', '--foreground', '--paste-once'])
+            self.assertEqual(run.call_args.kwargs['timeout'], 60)
+
     def test_wrong_sim_profiles_are_excluded(self):
         sim = {'OperatorIdentifier': '23450', 'SimIdentifier': 'sim-a'}
         self.assertTrue(modem.compatible({'sim-operator-id': '23450'}, sim))

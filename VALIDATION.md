@@ -1,6 +1,6 @@
 # Release validation
 
-Version 1.0.2 follows the [Omarchy authoring guide](https://plugins.omarchy.org/develop.html)
+Version 1.1.0 follows the [Omarchy authoring guide](https://plugins.omarchy.org/develop.html)
 and [publishing requirements](https://plugins.omarchy.org/publish.html).
 
 ## Repository and runtime contract
@@ -20,8 +20,8 @@ and [publishing requirements](https://plugins.omarchy.org/publish.html).
 ## Automated checks
 
 Run `bash scripts/validate.sh` on Omarchy with `qt6-declarative` installed.
-The official manifest validator, six panel backend tests, five recovery tests,
-installer shell syntax, and QML lint pass.
+The official manifest validator, seven panel backend tests, five recovery tests,
+installer Python syntax, and QML lint pass.
 
 QML lint uses a temporary `qs` import alias to resolve the same shell imports
 that Quickshell resolves at runtime. Source annotations suppress only known
@@ -55,3 +55,24 @@ has not yet been verified. See [recovery/README.md](recovery/README.md).
 
 Marketplace acceptance still requires a separate submission and maintainer
 approval; passing these checks is not an approval or security certification.
+
+## Security boundary regression checks (2026-09-11)
+
+Run `MODEM_SYSTEMD_TESTS=1 bash scripts/validate.sh` to include the live cgroup
+checks. Without that opt-in, the live systemd cases are explicitly reported as
+skipped. The test processes perform no modem, network, or root service changes.
+
+The suite covers command shadowing, environment injection, runtime ownership,
+lock symlinks/hardlinks/FIFOs, exclusive non-truncating locks, stdout/stderr
+floods, timeouts/cancellation, lingering child cleanup, descriptor-relative
+atomic writes, and symlink replacement races. Live systemd cases verify cleanup
+of a detached SIGTERM-ignoring descendant and enforcement of the service
+deadline after its client is killed with SIGKILL. See [SECURITY.md](SECURITY.md).
+
+On the development laptop, all 30 tests passed with the live cgroup cases
+enabled, along with manifest validation and QML lint. A read-only status query
+through the new launcher succeeded. NetworkManager reported `yes` for WWAN and
+network-control permissions from inside the transient user service. The new
+root installer completed successfully, and the installed recovery service
+reported a healthy modem and exited without resetting it. Its effective
+KillMode is control-group and its stop timeout is two seconds.

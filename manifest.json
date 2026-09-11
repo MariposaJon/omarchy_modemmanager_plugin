@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "jon.modem",
   "name": "Mobile Broadband",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "author": "Jon Knight",
   "license": "MIT",
   "description": "Cellular radio, connection controls, signal and traffic monitoring for ModemManager.",

@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3 -I
 """Small, unprivileged ModemManager/NetworkManager bridge for the Omarchy panel."""
 import argparse
-import fcntl
+import runpy
 import json
 import os
 from pathlib import Path
@@ -20,12 +20,8 @@ STATES = {-1: 'Failed', 0: 'Starting', 1: 'Starting', 2: 'SIM locked',
           7: 'Searching', 8: 'Registered', 9: 'Disconnecting', 10: 'Connecting', 11: 'Connected'}
 
 
-def run(args, timeout=20, **kwargs):
-    result = subprocess.run(args, capture_output=True, text=True, timeout=timeout,
-                            env={**os.environ, 'LC_ALL': 'C'}, **kwargs)
-    if result.returncode:
-        raise RuntimeError((result.stderr or result.stdout or 'Command failed').strip()[:600])
-    return result.stdout.strip()
+_runtime = runpy.run_path(str(Path(__file__).with_name('secure_runtime.py')))
+run = _runtime['command']
 
 
 def props(bus, service, path, interface):
@@ -227,7 +223,7 @@ def action(name, selected=''):
     if name == 'test':
         if not s['connected'] or not s['interface']:
             raise RuntimeError('Connect cellular data before testing.')
-        result = run(['curl', '--interface', s['interface'], '--noproxy', '*', '--max-time', '12',
+        result = run(['curl', '--disable', '--interface', s['interface'], '--noproxy', '*', '--max-time', '12',
                       '-sS', '-o', '/dev/null', '-w', '%{http_code} %{time_total}', 'https://1.1.1.1/'], timeout=15)
         code, elapsed = result.split()
         if not 200 <= int(code) < 400:
@@ -235,8 +231,8 @@ def action(name, selected=''):
         return f'Cellular HTTPS passed · {round(float(elapsed)*1000)} ms'
     if name == 'copy':
         # snapshot intentionally excludes IMSI, full ICCID, IMEI, and credentials.
-        run(['wl-copy'], input=json.dumps(s, indent=2))
-        return 'Diagnostics copied (no SIM identifiers or credentials)'
+        run(['wl-copy', '--foreground', '--paste-once'], input=json.dumps(s, indent=2), timeout=60)
+        return 'Diagnostics pasted (no SIM identifiers or credentials)'
     raise RuntimeError('Unknown action')
 
 
@@ -249,13 +245,7 @@ def main():
         if args.action == 'status':
             result = snapshot()
         else:
-            lock_dir = Path(os.environ.get('XDG_RUNTIME_DIR', f'/tmp/omarchy-modem-{os.getuid()}'))
-            lock_dir.mkdir(mode=0o700, exist_ok=True)
-            with (lock_dir / 'omarchy-modem.lock').open('w') as lock:
-                try:
-                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                except BlockingIOError:
-                    raise RuntimeError('Another modem action is already running.')
+            with _runtime['action_lock']():
                 result = {'ok': True, 'message': action(args.action, args.profile)}
         print(json.dumps(result))
         return 0 if result.get('ok') else 1

@@ -9,10 +9,10 @@ Plugin ID: `jon.modem`. Licensed under MIT.
 - Carrier, SIM provider, roaming, signal freshness, IP, APN, preferred default route, and live transfer rates.
 - Interface byte counters are totals since the interface was created/reset, **not billing or monthly usage**.
 - Manual HTTPS test bound to the cellular interface. Uses a small request to https://1.1.1.1/ only when clicked; no periodic internet tests.
-- Copy local diagnostic status without IMEI, IMSI, ICCID, or credentials. It includes local profile UUIDs, addresses, and traffic counters.
+- Copy local diagnostic status without IMEI, IMSI, ICCID, or credentials. It includes local profile UUIDs, addresses, and traffic counters. Paste once within 60 seconds; the panel stays busy while waiting for the paste.
 - Keyboard: arrows/j/k select controls; Enter/Space activate; P power, C connection, T test, R refresh, Escape close. Tab switches shell panels. Profile dropdown has its own keyboard navigation.
 
-Requires Omarchy's Quickshell shell, `python`, `python-dbus`, `modemmanager`, `networkmanager`, `iproute2`, `curl`, and `wl-clipboard`. The panel uses ordinary user D-Bus/Polkit permissions; installing the panel adds no privileged helper or authorization rules. The optional Intel recovery service is documented separately below. It reports authorization errors instead of silently escalating.
+Requires Omarchy's Quickshell shell, `python`, `python-dbus`, `modemmanager`, `networkmanager`, `iproute2`, `curl`, `wl-clipboard`, and an active systemd user manager with cgroup support. The panel uses ordinary user D-Bus/Polkit permissions; installing the panel adds no privileged helper or authorization rules. The optional Intel recovery service is documented separately below. It reports authorization errors instead of silently escalating. Each status/action runs as a temporary systemd user service with a deadline, cgroup cleanup, and output limits. There is no unsupervised fallback if the user service manager is unavailable.
 
 Status refreshes every 10 seconds in the background and 3 seconds with the panel open. The background interval can be changed in the widget settings. The panel does not guess SIM PINs or reset modem hardware. On multi-modem systems it selects the most active modem; explicit device selection is not implemented.
 
@@ -79,9 +79,9 @@ From the repository root:
 bash scripts/validate.sh
 ```
 
-The six panel backend tests cover profile selection, SIM matching, power
+The seven panel backend tests cover profile selection, SIM matching, power
 sequencing, hardware blocks, autoconnect, and interface-bound connectivity
-testing. Five recovery tests cover hardware guards and failure handling.
+testing and bounded clipboard ownership. Five recovery tests cover hardware guards and failure handling. The security suite tests hostile PATH/environment values, unsafe runtime paths and lock files, output floods, process cleanup, and installer symlink attacks.
 
 ## Intel modem unavailable after sleep
 
@@ -94,7 +94,7 @@ An optional, hardware-specific recovery workaround is in [recovery/](recovery/RE
 It requires administrator installation and is not installed by the panel setup.
 It targets Intel 8086:7360 at PCI address `0000:02:00.0` only.
 
-The validation script runs Omarchy's manifest validator, QML lint, shell syntax
+The validation script runs Omarchy's manifest validator, QML lint, Python syntax
 checks, and the backend tests. It needs `qt6-declarative` for `qmllint` and an
 installed Omarchy shell. It creates a temporary import alias for Quickshell's
 `qs` namespace; no symlinks are added to the plugin directory. Narrow inline
@@ -103,3 +103,15 @@ missing `QProcess::ExitStatus` metadata. All other lint warnings remain enabled.
 
 See [VALIDATION.md](VALIDATION.md) for the release checks and remaining hardware
 coverage limits.
+
+## Runtime and installation boundaries
+
+The launcher uses `/usr/bin/python3 -I` with a cleared, allowlisted environment.
+Helper tools are selected from fixed `/usr/bin` paths and checked for root
+ownership and non-writable ancestry. Curl ignores per-user configuration.
+Actions require the private logind directory `/run/user/UID` (owned by that
+user, mode 0700); there is no `/tmp` lock fallback. Lock opens never truncate or
+follow symlinks, and reject hardlinks, special files, and unsafe permissions.
+
+See [SECURITY.md](SECURITY.md) for the detailed limits, trust assumptions, and
+regression checks addressing the marketplace review.

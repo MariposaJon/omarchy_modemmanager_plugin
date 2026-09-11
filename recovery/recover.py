@@ -1,16 +1,22 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -I
 """Bounded recovery for this machine's XMM7360 after resume."""
 import json
 from pathlib import Path
-import subprocess
 import time
+import runpy
+
+runtime_path = Path(__file__).with_name('secure_runtime.py')
+if not runtime_path.exists():
+    runtime_path = Path(__file__).parent.parent / 'secure_runtime.py'
+runtime = runpy.run_path(str(runtime_path))
 
 PCI = Path('/sys/bus/pci/devices/0000:02:00.0')
 DRIVER = Path('/sys/bus/pci/drivers/iosm')
 
 
 def run(*args):
-    return subprocess.run(args, check=True, capture_output=True, text=True, timeout=30).stdout
+    # The public run signature retains the absolute identities used at each call site.
+    return runtime['command']([Path(args[0]).name, *args[1:]], timeout=30)
 
 
 def guarded_device():

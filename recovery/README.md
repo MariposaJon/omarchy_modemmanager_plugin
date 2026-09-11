@@ -20,13 +20,26 @@ Review the scripts and confirm your hardware matches before installing. From
 the repository root in a terminal:
 
 ```bash
-sudo bash recovery/install.sh
+/usr/bin/sudo /usr/bin/python3 -I recovery/install.py
 ```
 
-This installs root-owned files into `/usr/local/libexec/` and
+This installs root-owned files into `/usr/local/libexec/omarchy-modem-recovery/` and
 `/etc/systemd/system/`, enables the after-sleep trigger, and schedules an
 immediate health check. A missing modem may therefore be reset during
 installation. No additional Polkit authorization rules are installed.
+
+Use a reviewed checkout owned by root or the invoking user, with no writable
+shared ancestors or symlinked source directories. The installer rejects unsafe
+source/destination paths. It snapshots source files through no-follow descriptors,
+verifies fixed system tool paths, and performs exclusive temporary writes and
+atomic replacements relative to root-owned directory descriptors. It creates
+the fixed systemd enablement link through the same descriptor-based handling.
+No shell or ambient PATH command resolution is used.
+
+To upgrade an earlier installation, run the same Python installer. The units
+will use the new helper directory. The old `/usr/local/libexec/xmm7360-recover`
+file, if present, is no longer referenced and may be removed after confirming
+the new service has finished successfully.
 
 ## Inspect
 
@@ -40,23 +53,24 @@ journalctl -u xmm7360-recover.service -u xmm7360-resume.service
 Allow any active recovery to finish before removing the helper:
 
 ```bash
-sudo systemctl disable xmm7360-resume.service
+/usr/bin/sudo /usr/bin/systemctl disable xmm7360-resume.service
 systemctl status xmm7360-recover.service
 ```
 
 Once recovery is inactive and the computer is awake:
 
 ```bash
-sudo systemctl stop xmm7360-resume.service
+/usr/bin/sudo /usr/bin/systemctl stop xmm7360-resume.service
 ```
 
 Stopping an armed resume unit may queue one final health check. Wait for
 `xmm7360-recover.service` to become inactive again, then:
 
 ```bash
-sudo rm /etc/systemd/system/xmm7360-resume.service /etc/systemd/system/xmm7360-recover.service
-sudo rm /usr/local/libexec/xmm7360-recover
-sudo systemctl daemon-reload
+/usr/bin/sudo /usr/bin/rm /etc/systemd/system/xmm7360-resume.service /etc/systemd/system/xmm7360-recover.service
+/usr/bin/sudo /usr/bin/rm /usr/local/libexec/omarchy-modem-recovery/recover.py /usr/local/libexec/omarchy-modem-recovery/secure_runtime.py
+/usr/bin/sudo /usr/bin/rmdir /usr/local/libexec/omarchy-modem-recovery
+/usr/bin/sudo /usr/bin/systemctl daemon-reload
 ```
 
 ## Verification and limits

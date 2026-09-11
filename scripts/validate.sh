@@ -3,9 +3,9 @@ set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 
 omarchy plugin validate .
-python -m unittest discover -s . -p test_modem.py -v
+python -m unittest discover -s . -p 'test_*.py' -v
 python -m unittest discover -s recovery -v
-bash -n recovery/install.sh
+python -c 'import ast, pathlib; ast.parse(pathlib.Path("recovery/install.py").read_text())'
 
 modem_shell_path="${OMARCHY_PATH:-/usr/share/omarchy}/shell"
 [[ -d "$modem_shell_path/Ui" ]] || { echo "Omarchy shell imports not found: $modem_shell_path" >&2; exit 1; }
