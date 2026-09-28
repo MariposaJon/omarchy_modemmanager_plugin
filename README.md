@@ -1,4 +1,14 @@
-# Mobile Broadband for Omarchy
+# Modem Manager for Omarchy
+
+![Modem Manager: dark-mode artwork with cellular connectivity and plugin features](preview.png)
+
+## Interface preview
+
+The real QML panel content rendered in Omarchy's dark theme with **fictional
+sample modem data**. This is a UI preview, not a live modem capture; no network
+connection or hardware settings were changed to produce it.
+
+<img src="screenshots/controls-sample.png" alt="Modem Manager controls with clearly labelled sample data" width="390">
 
 A native, theme-aware Omarchy bar panel for ModemManager and NetworkManager.
 Plugin ID: `jon.modem`. Licensed under MIT.

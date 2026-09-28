@@ -43,7 +43,7 @@ Ui.Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    tooltipText: "Mobile broadband · " + (root.s.status || "Checking…") + (root.s.carrier ? "\n" + root.s.carrier : "") + "\nClick: controls · Right-click: radio"
+    tooltipText: "Modem Manager · " + (root.s.status || "Checking…") + (root.s.carrier ? "\n" + root.s.carrier : "") + "\nClick: controls · Right-click: radio"
     iconComponent: Component {
       SignalIcon { quality: root.s.signal || 0; powered: !!root.s.radio; connected: !!root.s.connected; foreground: root.barForeground }
     }
@@ -77,7 +77,7 @@ Ui.Panel {
         width: parent.width
         spacing: Style.space(12)
         Ui.PanelHero {
-          title: "Mobile broadband"
+          title: "Modem Manager"
           meta: modem.busy ? "Working…" : root.s.status || "Checking…"
           foreground: root.ink
           fontFamily: root.family

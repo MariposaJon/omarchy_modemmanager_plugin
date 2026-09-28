@@ -1,5 +1,19 @@
 # Release validation
 
+## Version 1.1.1 — 28 September 2026
+
+Renamed the display name, panel title, tooltip, and README to **Modem Manager**.
+Added marketplace artwork with that name and documented the sample UI capture.
+The permanent plugin ID remains `jon.modem`. Changes since the listed v1.1.0
+snapshot are presentation, assets, and documentation only.
+
+`MODEM_SYSTEMD_TESTS=1 bash scripts/validate.sh` passed: 25 backend/security tests
+(including both live systemd cleanup cases), five recovery tests, manifest
+validation, installer syntax, and QML lint. `git diff --check` passed. No modem
+or network controls were exercised for this presentation update.
+
+## Version 1.1.0
+
 Version 1.1.0 follows the [Omarchy authoring guide](https://plugins.omarchy.org/develop.html)
 and [publishing requirements](https://plugins.omarchy.org/publish.html).
 
